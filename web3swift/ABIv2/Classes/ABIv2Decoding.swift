@@ -27,11 +27,11 @@ extension ABIv2Decoder {
         var consumed: UInt64 = 0
         for i in 0 ..< types.count {
             let (v, c) = decodeSignleType(type: types[i], data: data, pointer: consumed)
-            guard let valueUnwrapped = v, let consumedUnwrapped = c else {return nil}
+            guard let valueUnwrapped = v, let consumedUnwrapped = c else { return nil }
             toReturn.append(valueUnwrapped)
             consumed = consumed + consumedUnwrapped
         }
-        guard toReturn.count == types.count else {return nil}
+        guard toReturn.count == types.count else { return nil }
         return toReturn
     }
     
@@ -43,7 +43,7 @@ extension ABIv2Decoder {
         switch type {
         case .uint(let bits):
 //            print("Uint256 element itself: \n" + elementItself.toHexString())
-            guard elementItself.count >= 32 else {break}
+            guard elementItself.count >= 32 else { break }
             let mod = BigUInt(1) << bits
             let dataSlice = elementItself[0 ..< 32]
             let v = BigUInt(dataSlice) % mod
@@ -51,7 +51,7 @@ extension ABIv2Decoder {
             return (v as AnyObject, type.memoryUsage)
         case .int(let bits):
 //            print("Int256 element itself: \n" + elementItself.toHexString())
-            guard elementItself.count >= 32 else {break}
+            guard elementItself.count >= 32 else { break }
             let mod = BigInt(1) << bits
             let dataSlice = elementItself[0 ..< 32]
             let v = BigInt.fromTwosComplement(data: dataSlice) % mod
@@ -59,14 +59,14 @@ extension ABIv2Decoder {
             return (v as AnyObject, type.memoryUsage)
         case .address:
 //            print("Address element itself: \n" + elementItself.toHexString())
-            guard elementItself.count >= 32 else {break}
+            guard elementItself.count >= 32 else { break }
             let dataSlice = elementItself[12 ..< 32]
             let address = EthereumAddress(dataSlice)
 //            print("Address element is: \n" + String(address.address))
             return (address as AnyObject, type.memoryUsage)
         case .bool:
 //            print("Bool element itself: \n" + elementItself.toHexString())
-            guard elementItself.count >= 32 else {break}
+            guard elementItself.count >= 32 else { break }
             let dataSlice = elementItself[0 ..< 32]
             let v = BigUInt(dataSlice)
 //            print("Address element is: \n" + String(v))
@@ -77,26 +77,26 @@ extension ABIv2Decoder {
             }
         case .bytes(let length):
 //            print("Bytes32 element itself: \n" + elementItself.toHexString())
-            guard elementItself.count >= 32 else {break}
+            guard elementItself.count >= 32 else { break }
             let dataSlice = elementItself[0 ..< length]
 //            print("Bytes32 element is: \n" + String(dataSlice.toHexString()))
             return (dataSlice as AnyObject, type.memoryUsage)
         case .string:
 //            print("String element itself: \n" + elementItself.toHexString())
-            guard elementItself.count >= 32 else {break}
+            guard elementItself.count >= 32 else { break }
             var dataSlice = elementItself[0 ..< 32]
             let length = UInt64(BigUInt(dataSlice))
-            guard elementItself.count >= 32+length else {break}
+            guard elementItself.count >= 32+length else { break }
             dataSlice = elementItself[32 ..< 32 + length]
-            guard let string = String(data: dataSlice, encoding: .utf8) else {break}
+            guard let string = String(data: dataSlice, encoding: .utf8) else { break }
 //            print("String element is: \n" + String(string))
             return (string as AnyObject, type.memoryUsage)
         case .dynamicBytes:
 //            print("Bytes element itself: \n" + elementItself.toHexString())
-            guard elementItself.count >= 32 else {break}
+            guard elementItself.count >= 32 else { break }
             var dataSlice = elementItself[0 ..< 32]
             let length = UInt64(BigUInt(dataSlice))
-            guard elementItself.count >= 32+length else {break}
+            guard elementItself.count >= 32+length else { break }
             dataSlice = elementItself[32 ..< 32 + length]
 //            print("Bytes element is: \n" + String(dataSlice.toHexString()))
             return (dataSlice as AnyObject, type.memoryUsage)
@@ -106,33 +106,33 @@ extension ABIv2Decoder {
 //                print("Dynamic array element itself: \n" + elementItself.toHexString())
                 if subType.isStatic {
                     // uint[] like, expect length and elements
-                    guard elementItself.count >= 32 else {break}
+                    guard elementItself.count >= 32 else { break }
                     var dataSlice = elementItself[0 ..< 32]
                     let length = UInt64(BigUInt(dataSlice))
-                    guard elementItself.count >= 32 + subType.memoryUsage*length else {break}
+                    guard elementItself.count >= 32 + subType.memoryUsage*length else { break }
                     dataSlice = elementItself[32 ..< 32 + subType.memoryUsage*length]
                     var subpointer: UInt64 = 32;
                     var toReturn = [AnyObject]()
                     for _ in 0 ..< length {
                         let (v, c) = decodeSignleType(type: subType, data: elementItself, pointer: subpointer)
-                        guard let valueUnwrapped = v, let consumedUnwrapped = c else {break}
+                        guard let valueUnwrapped = v, let consumedUnwrapped = c else { break }
                         toReturn.append(valueUnwrapped)
                         subpointer = subpointer + consumedUnwrapped
                     }
                     return (toReturn as AnyObject, type.memoryUsage)
                 } else {
                     // in principle is true for tuple[], so will work for string[] too
-                    guard elementItself.count >= 32 else {break}
+                    guard elementItself.count >= 32 else { break }
                     var dataSlice = elementItself[0 ..< 32]
                     let length = UInt64(BigUInt(dataSlice))
-                    guard elementItself.count >= 32 else {break}
+                    guard elementItself.count >= 32 else { break }
                     dataSlice = Data(elementItself[32 ..< elementItself.count])
                     var subpointer: UInt64 = 0;
                     var toReturn = [AnyObject]()
 //                    print("Dynamic array sub element itself: \n" + dataSlice.toHexString())
                     for _ in 0 ..< length {
                         let (v, c) = decodeSignleType(type: subType, data: dataSlice, pointer: subpointer)
-                        guard let valueUnwrapped = v, let consumedUnwrapped = c else {break}
+                        guard let valueUnwrapped = v, let consumedUnwrapped = c else { break }
                         toReturn.append(valueUnwrapped)
                         subpointer = subpointer + consumedUnwrapped
                     }
@@ -140,12 +140,12 @@ extension ABIv2Decoder {
                 }
             case .staticSize(let staticLength):
 //                print("Static array element itself: \n" + elementItself.toHexString())
-                guard length == staticLength else {break}
+                guard length == staticLength else { break }
                 var toReturn = [AnyObject]()
                 var consumed:UInt64 = 0
                 for _ in 0 ..< length {
                     let (v, c) = decodeSignleType(type: subType, data: elementItself, pointer: consumed)
-                    guard let valueUnwrapped = v, let consumedUnwrapped = c else {return (nil, nil)}
+                    guard let valueUnwrapped = v, let consumedUnwrapped = c else { return (nil, nil) }
                     toReturn.append(valueUnwrapped)
                     consumed = consumed + consumedUnwrapped
                 }
@@ -163,7 +163,7 @@ extension ABIv2Decoder {
             var consumed:UInt64 = 0
             for i in 0 ..< subTypes.count {
                 let (v, c) = decodeSignleType(type: subTypes[i], data: elementItself, pointer: consumed)
-                guard let valueUnwrapped = v, let consumedUnwrapped = c else {return (nil, nil)}
+                guard let valueUnwrapped = v, let consumedUnwrapped = c else { return (nil, nil) }
                 toReturn.append(valueUnwrapped)
                 consumed = consumed + consumedUnwrapped
             }
@@ -175,7 +175,7 @@ extension ABIv2Decoder {
             }
         case .function:
 //            print("Function element itself: \n" + elementItself.toHexString())
-            guard elementItself.count >= 32 else {break}
+            guard elementItself.count >= 32 else { break }
             let dataSlice = elementItself[8 ..< 32]
 //            print("Function element is: \n" + String(dataSlice.toHexString()))
             return (dataSlice as AnyObject, type.memoryUsage)
@@ -187,14 +187,14 @@ extension ABIv2Decoder {
 //        print("Follow the data: \n" + data.toHexString())
 //        print("At pointer: \n" + String(pointer))
         if type.isStatic {
-            guard data.count >= pointer + type.memoryUsage else {return (nil, nil)}
+            guard data.count >= pointer + type.memoryUsage else { return (nil, nil) }
             let elementItself = data[pointer ..< pointer + type.memoryUsage]
             let nextElement = pointer + type.memoryUsage
 //            print("Got element itself: \n" + elementItself.toHexString())
 //            print("Next element pointer: \n" + String(nextElement))
             return (Data(elementItself), nextElement)
         } else {
-            guard data.count >= pointer + type.memoryUsage else {return (nil, nil)}
+            guard data.count >= pointer + type.memoryUsage else { return (nil, nil) }
             let dataSlice = data[pointer ..< pointer + type.memoryUsage]
             let bn = BigUInt(dataSlice)
             if bn > UINT64_MAX || bn >= data.count {
@@ -239,23 +239,23 @@ extension ABIv2Decoder {
         let nonIndexedTypes = nonIndexedInputs.compactMap { (inp) -> ABIv2.Element.ParameterType in
             return inp.type
         }
-        guard logs.count == indexedInputs.count + 1 else {return nil}
+        guard logs.count == indexedInputs.count + 1 else { return nil }
         var indexedValues = [AnyObject]()
         for i in 0 ..< indexedInputs.count {
             let data = logs[i+1]
             let input = indexedInputs[i]
             if !input.type.isStatic || input.type.isArray || input.type.memoryUsage != 32 {
                 let (v, _) = ABIv2Decoder.decodeSignleType(type: .bytes(length: 32), data: data)
-                guard let valueUnwrapped = v else {return nil}
+                guard let valueUnwrapped = v else { return nil }
                 indexedValues.append(valueUnwrapped)
             } else {
                 let (v, _) = ABIv2Decoder.decodeSignleType(type: input.type, data: data)
-                guard let valueUnwrapped = v else {return nil}
+                guard let valueUnwrapped = v else { return nil }
                 indexedValues.append(valueUnwrapped)
             }
         }
         let v = ABIv2Decoder.decode(types: nonIndexedTypes, data: dataForProcessing)
-        guard let nonIndexedValues = v else {return nil}
+        guard let nonIndexedValues = v else { return nil }
         var indexedInputCounter = 0
         var nonIndexedInputCounter = 0
         for i in 0 ..< event.inputs.count {

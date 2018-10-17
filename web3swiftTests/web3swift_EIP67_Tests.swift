@@ -10,7 +10,7 @@ import XCTest
 import CryptoSwift
 import BigInt
 import Result
-import secp256k1_ios
+import secp256k1
 
 
 @testable import web3swift_iOS
@@ -41,7 +41,7 @@ class web3swift_EIP67_Tests: XCTestCase {
         eip67Data.amount = BigUInt("1000000000000000000")
         //        eip67Data.data =
         let encoding = eip67Data.toString()
-        guard let code = Web3.EIP67CodeParser.parse(encoding) else {return XCTFail()}
+        guard let code = Web3.EIP67CodeParser.parse(encoding) else { return XCTFail() }
         XCTAssert(code.address == eip67Data.address)
         XCTAssert(code.gasLimit == eip67Data.gasLimit)
         XCTAssert(code.amount == eip67Data.amount)
