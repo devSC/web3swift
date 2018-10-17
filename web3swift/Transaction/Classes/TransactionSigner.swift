@@ -77,7 +77,7 @@ public struct Web3Signer {
             return signHash(hash, privateKey: privateKey, useExtraEntropy: useExtraEntropy)
         }
         
-        private static func signHash(_ hash: Data, privateKey: Data, useExtraEntropy: Bool = true) -> Data? {
+        public static func signHash(_ hash: Data, privateKey: Data, useExtraEntropy: Bool = true) -> Data? {
             return SECP256K1.signForRecovery(hash: hash, privateKey: privateKey, useExtraEntropy: useExtraEntropy).serializedSignature
         }
     }
